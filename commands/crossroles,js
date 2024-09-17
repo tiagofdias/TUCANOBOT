@@ -1,0 +1,87 @@
+const { SlashCommandBuilder, MessageEmbed, ActionRowBuilder, MessageSelectMenu, ButtonBuilder, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('setup')
+    .setDescription('Configure role syncing between servers'),
+  async execute(interaction) {
+
+    // Get the member from the interaction
+    const member = interaction.member;
+    const client = interaction.client;
+
+    // Define an object to store the server IDs by name
+    const serverDictionary = {};
+
+    // Loop through all the guilds the member is in
+    for (const guild of client.guilds.cache.values()) {
+      // Check if the member is in the current guild
+      const memberInGuild = guild.members.cache.has(member.id);
+      if (memberInGuild) {
+        // Check if the member has admin permissions in the current guild
+        try {
+          if (guild.members.cache.get(member.id).permissions.has('ADMINISTRATOR')) {
+            serverDictionary[guild.name] = guild.id;
+          }
+        } catch { }
+      }
+    }
+
+    // Construct the message based on whether the member has admin permissions in any servers or not
+
+    if (serverDictionary.length === 0) {
+      interaction.reply(`You don't have admin permissions in any servers.`);
+    }
+    else {
+      // Use the serverDictionary object to create a select menu
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('server1')
+        .setPlaceholder('Select the first server')
+        .addOptions(Object.keys(serverDictionary).map(name => {
+          return {
+            label: name,
+            value: serverDictionary[name]
+          }
+        }));
+
+      const selectMenu2 = new StringSelectMenuBuilder()
+        .setCustomId('server2')
+        .setPlaceholder('Select the second server')
+        .addOptions(Object.keys(serverDictionary).map(name => {
+          return {
+            label: name,
+            value: serverDictionary[name]
+          }
+        }));
+
+      const bttCancel = new ButtonBuilder()
+        .setCustomId('bttCancel')
+        .setLabel('Cancel')
+        .setStyle('Danger');
+
+      const bttNext = new ButtonBuilder()
+        .setCustomId('bttNext')
+        .setLabel('Next')
+        .setStyle('Primary');
+
+      // Use the select menu in an action row and embed
+      const row = new ActionRowBuilder()
+        .addComponents(selectMenu)
+
+      const row2 = new ActionRowBuilder()
+        .addComponents(selectMenu2)
+
+      const row3 = new ActionRowBuilder()
+        .addComponents(bttCancel, bttNext);
+
+
+      const embed = new EmbedBuilder()
+        .setTitle('Select a server')
+        .setDescription('Please select a server from the menu.')
+        .setColor('BLUE');
+
+      // Reply to the interaction with the embed and action row
+      await interaction.reply({ content: 'Please select a server from the menu.', components: [row, row2, row3] });
+    }
+
+  },
+};

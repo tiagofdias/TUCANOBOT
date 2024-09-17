@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@discordjs/voice": "^0.14.0",
+    "canvacord": "^5.4.8",
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3",
+    "openai": "^3.2.1",
+    "pretty-ms": "^8.0.0",
+    "sequelize": "^6.28.0",
+    "sqlite3": "^5.1.4"
+  }
+}
