@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 const RoleStatus = require('../models/RoleStatus');
+const CacheManager = require('../utils/CacheManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -89,7 +90,11 @@ module.exports = {
                                     RoleID: role,
                                     Roletype: roletype
                                 })
-                                    .then(() => interaction.reply({ content: "Your role was successfully added", ephemeral: true }))
+                                    .then(() => {
+                                        CacheManager.delete(CacheManager.keys.roleStatus(interaction.guildId.toString(), roletype));
+                                        CacheManager.delete(CacheManager.keys.allRoleStatus(interaction.guildId.toString()));
+                                        interaction.reply({ content: "Your role was successfully added", ephemeral: true })
+                                    })
                                     .catch(error => {
                                         if (error.name === 'SequelizeUniqueConstraintError') {
                                             interaction.reply('That tag already exists.');
@@ -111,6 +116,8 @@ module.exports = {
 
                     if (count > 0) {
                         await RoleStatus.destroy({ where: { ServerID: interaction.guildId.toString(), Roletype: roletype2 } });
+                        CacheManager.delete(CacheManager.keys.roleStatus(interaction.guildId.toString(), roletype2));
+                        CacheManager.delete(CacheManager.keys.allRoleStatus(interaction.guildId.toString()));
                         interaction.reply({ content: `The status role was successfully removed.`, ephemeral: true });
                     } else
                         interaction.reply({ content: `There's no roles inside this status.`, ephemeral: true });

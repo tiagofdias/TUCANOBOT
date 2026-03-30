@@ -8,6 +8,7 @@ const VanityRoles = require('../models/VanityRoles');
 const RoleStatus = require('../models/RoleStatus');
 const Maintenance = require('../models/Maintenance');
 const CHATGPT = require('../models/CHATGPT');
+const CacheManager = require('../utils/CacheManager');
 
 // ============ SUGGESTIONS ============
 // Model has: IDSuggestions, ServerID, ChannelID (no Status field)
@@ -157,6 +158,9 @@ router.post('/:guildId/vanityroles', requireAuth, requireGuildPermission, async 
             RoleID: roleId,
             CustomStatus: customStatus
         });
+        
+        CacheManager.delete(CacheManager.keys.vanityRoles(req.params.guildId));
+
         res.json(role);
     } catch (error) {
         console.error('Error creating vanityrole:', error);
@@ -169,6 +173,9 @@ router.delete('/:guildId/vanityroles/:id', requireAuth, requireGuildPermission, 
         await VanityRoles.destroy({ 
             where: { IDVanity: req.params.id }
         });
+        
+        CacheManager.delete(CacheManager.keys.vanityRoles(req.params.guildId));
+
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting vanityrole:', error);
@@ -209,6 +216,10 @@ router.post('/:guildId/rolestatus', requireAuth, requireGuildPermission, async (
             RoleID: roleId,
             Roletype: roleType || 0
         });
+
+        CacheManager.delete(CacheManager.keys.roleStatus(req.params.guildId, roleType || 0));
+        CacheManager.delete(CacheManager.keys.allRoleStatus(req.params.guildId));
+
         res.json(config);
     } catch (error) {
         console.error('Error creating rolestatus:', error);
@@ -218,9 +229,13 @@ router.post('/:guildId/rolestatus', requireAuth, requireGuildPermission, async (
 
 router.delete('/:guildId/rolestatus/:id', requireAuth, requireGuildPermission, async (req, res) => {
     try {
-        await RoleStatus.destroy({ 
-            where: { IDStatusRoles: req.params.id }
-        });
+        const toDelete = await RoleStatus.findOne({ where: { IDStatusRoles: req.params.id } });
+        if (toDelete) {
+            const roleType = toDelete.Roletype;
+            await toDelete.destroy();
+            CacheManager.delete(CacheManager.keys.roleStatus(req.params.guildId, roleType));
+            CacheManager.delete(CacheManager.keys.allRoleStatus(req.params.guildId));
+        }
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting rolestatus:', error);

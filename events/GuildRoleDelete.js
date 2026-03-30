@@ -7,6 +7,8 @@ const LevelRoleMultiplier = require('../models/LevelRoleMultiplier');
 module.exports = {
     name: Events.GuildRoleDelete,
     async execute(role) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping GuildRoleDelete.js - database offline');
+
 
         try {
 

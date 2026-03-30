@@ -3,10 +3,13 @@ const { Events } = require('discord.js');
 const PersistentRoles2 = require('../models/PersistantRoles2');
 const PersistentRoles = require('../models/PersistantRoles');
 const AutoRole = require('../models/AutoRole');
+const CacheManager = require('../utils/CacheManager');
 
 module.exports = {
   name: Events.GuildMemberAdd,
   async execute(member) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping GuildMemberAdd.js - database offline');
+
 
     try {
 
@@ -25,7 +28,10 @@ module.exports = {
         //////////////////////////////////////////////////////////
 
       //Autorole
-      const autoRoles = await AutoRole.findAll({ where: { serverId: member.guild.id } });
+      const autoRoles = await CacheManager.getOrFetch(
+        `autoRole_${member.guild.id}`,
+        () => AutoRole.findAll({ where: { serverId: member.guild.id } })
+      );
       for (const autoRole of autoRoles) {
         if (member.user.bot && autoRole.botRoleId) {
           const botRole = member.guild.roles.cache.get(autoRole.botRoleId);
@@ -42,7 +48,10 @@ module.exports = {
 
 
       //Persistant Roles
-      const persistentRoles = await PersistentRoles2.findOne({ where: { ServerID: member.guild.id } });
+      const persistentRoles = await CacheManager.getOrFetch(
+        `persistentRoles_${member.guild.id}`,
+        () => PersistentRoles2.findOne({ where: { ServerID: member.guild.id } })
+      );
 
       if (persistentRoles && persistentRoles.Status === true) {
 

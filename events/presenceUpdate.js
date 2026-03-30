@@ -2,11 +2,14 @@ const { Events } = require('discord.js');
 
 const VanityRoles = require('../models/VanityRoles');
 const RoleStatus = require('../models/RoleStatus');
+const CacheManager = require('../utils/CacheManager');
 
 module.exports = {
 	name: Events.PresenceUpdate,
 	once: false,
 	async execute( oldPresence, newPresence ) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping presenceUpdate.js - database offline');
+
 
     try {
 
@@ -33,44 +36,49 @@ module.exports = {
           TipoOldAtividades.filter((item) => TipoNewAtividades.indexOf(item) < 0)
         );
   
-        await RoleStatus.findAll({
-          where: { ServerID: serverID, Roletype: TipoAllAtividades },
-          raw: true,
-        }).then(async function (QueryRoleStatus) {
-          let roles = {};
-  
-          QueryRoleStatus.forEach((record) => {
-            roles[record.Roletype] = record.RoleID;
-          });
-  
-          let RolesRemove = [];
-          //Tinha no Antigo e agora nao
-          let AtividadesRemove = TipoOldAtividades.filter(
-            (x) => !TipoNewAtividades.includes(x)
-          );
-  
-          AtividadesRemove.forEach((Atividade) => {
-            roles[Atividade] != null
-              ? RolesRemove.push(roles[Atividade])
-              : null;
-          });
-  
-          let RolesAdd = [];
-  
-          let AtividadesAdd = TipoNewAtividades;
-  
-          AtividadesAdd.forEach((Atividade) => {
-            roles[Atividade] != null ? RolesAdd.push(roles[Atividade]) : null;
-          });
-  
-          if (RolesRemove.length > 0) {
-            await newPresence.member.roles.remove(RolesRemove);
-          }
-  
-          if (RolesAdd.length > 0) {
-            await newPresence.member.roles.add(RolesAdd);
-          }
+        const allRoleStatuses = await CacheManager.getOrFetch(
+          CacheManager.keys.allRoleStatus(serverID),
+          () => RoleStatus.findAll({ where: { ServerID: serverID }, raw: true })
+        );
+
+        // Filter for relevant role types
+        const QueryRoleStatus = allRoleStatuses.filter(record => 
+          TipoAllAtividades.includes(parseInt(record.Roletype))
+        );
+
+        let roles = {};
+
+        QueryRoleStatus.forEach((record) => {
+          roles[record.Roletype] = record.RoleID;
         });
+
+        let RolesRemove = [];
+        //Tinha no Antigo e agora nao
+        let AtividadesRemove = TipoOldAtividades.filter(
+          (x) => !TipoNewAtividades.includes(x)
+        );
+
+        AtividadesRemove.forEach((Atividade) => {
+          roles[Atividade] != null
+            ? RolesRemove.push(roles[Atividade])
+            : null;
+        });
+
+        let RolesAdd = [];
+
+        let AtividadesAdd = TipoNewAtividades;
+
+        AtividadesAdd.forEach((Atividade) => {
+          roles[Atividade] != null ? RolesAdd.push(roles[Atividade]) : null;
+        });
+
+        if (RolesRemove.length > 0) {
+          await newPresence.member.roles.remove(RolesRemove);
+        }
+
+        if (RolesAdd.length > 0) {
+          await newPresence.member.roles.add(RolesAdd);
+        }
       }
   
       //VANITY ROLES
@@ -78,8 +86,13 @@ module.exports = {
       let customStatusOld = oldPresence.activities.length > 0 ? oldPresence.activities[0].state : null;
       let customStatusNew = newPresence.activities.length > 0 ? newPresence.activities[0].state : null;
   
+      const allVanityRoles = await CacheManager.getOrFetch(
+        CacheManager.keys.vanityRoles(serverID),
+        () => VanityRoles.findAll({ where: { ServerID: serverID } })
+      );
+
       if (customStatusOld !== "null") {
-        const Query = await VanityRoles.findAll({ where: { ServerID: serverID, CustomStatus: customStatusOld } });
+        const Query = allVanityRoles.filter(role => role.CustomStatus === customStatusOld);
   
         if (Query.length > 0) {
           for (let i = 0; i < Query.length; i++) {
@@ -92,7 +105,7 @@ module.exports = {
       }
   
       if (customStatusNew !== "null") {
-        const Query = await VanityRoles.findAll({ where: { ServerID: serverID, CustomStatus: customStatusNew } });
+        const Query = allVanityRoles.filter(role => role.CustomStatus === customStatusNew);
   
         if (Query.length > 0) {
           for (let i = 0; i < Query.length; i++) {

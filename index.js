@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+// Safe Mode Initialization
+global.DATABASE_OFFLINE = false;
+
 const db = require('./database/database');
 const {
   Client,

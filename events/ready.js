@@ -71,7 +71,10 @@ module.exports = {
 				client.user.setActivity(status[random]);
 			}, 10000);
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+			global.DATABASE_OFFLINE = true;
+			console.log('[DB] Database connection failed - Safe Mode activated:', err.message || err);
+		});
 
 	},
 };

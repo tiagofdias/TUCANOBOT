@@ -20,6 +20,21 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// API Safe Mode Protection
+app.use('/api', (req, res, next) => {
+    // Exclude /api/status so dashboard can still check bot health
+    if (req.path === '/status') return next();
+    
+    if (global.DATABASE_OFFLINE) {
+        return res.status(503).json({ error: 'Database is currently unavailable. Bot is in Safe Mode.', status: 'SAFE_MODE' });
+    }
+    next();
+});
+
+app.get('/api/status', (req, res) => {
+    res.json({ databaseStatus: !global.DATABASE_OFFLINE ? 'ONLINE' : 'OFFLINE', mode: global.DATABASE_OFFLINE ? 'SAFE_MODE' : 'NORMAL' });
+});
+
 // Trust Render's reverse proxy (required for secure cookies)
 if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);

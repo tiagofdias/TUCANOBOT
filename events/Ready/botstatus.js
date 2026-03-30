@@ -62,6 +62,8 @@ module.exports = {
     async execute(client) {
 
         setInterval(() => {
+            if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping interval in botstatus.js');
+
             let random = Math.floor(Math.random() * status.length);
             client.user.setActivity(status[random]);
         }, 10000);

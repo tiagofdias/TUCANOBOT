@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 
 const ActiveRolesConfig = require('../models/ActiveRolesConfig');
+const CacheManager = require('../utils/CacheManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -107,7 +108,7 @@ module.exports = {
                     Enabled: enabled,
                     BonusPoints: bonuspoints
                 });   
-
+                CacheManager.delete(CacheManager.keys.activeRolesConfig(interaction.guild.id));
                 interaction.reply({ content: 'Active roles system has been configured.', ephemeral: true, });
 
                 break;

@@ -5,6 +5,7 @@ const { requireAuth, requireGuildPermission } = require('./guilds');
 const Level = require('../models/Level');
 const LevelConfig = require('../models/LevelConfig');
 const LevelRoleMultiplier = require('../models/LevelRoleMultiplier');
+const CacheManager = require('../utils/CacheManager');
 
 // Get level config for a guild
 router.get('/:guildId/levels/config', requireAuth, requireGuildPermission, async (req, res) => {
@@ -52,6 +53,8 @@ router.put('/:guildId/levels/config', requireAuth, requireGuildPermission, async
             DailyXP: DailyXP ?? config.DailyXP,
             Status: Status ?? config.Status
         });
+
+        CacheManager.delete(CacheManager.keys.levelConfig(req.params.guildId));
 
         res.json(config);
     } catch (error) {
@@ -151,7 +154,9 @@ router.post('/:guildId/levels/multipliers', requireAuth, requireGuildPermission,
             await multiplier.update({ Boost: boost });
         }
 
-        res.json(multiplier);
+        CacheManager.delete(CacheManager.keys.levelRoleMultipliers(req.params.guildId));
+
+        res.json({ success: true });
     } catch (error) {
         console.error('Error adding multiplier:', error);
         res.status(500).json({ error: 'Failed to add multiplier' });
@@ -164,6 +169,9 @@ router.delete('/:guildId/levels/multipliers/:roleId', requireAuth, requireGuildP
         await LevelRoleMultiplier.destroy({
             where: { ServerID: req.params.guildId, RoleID: req.params.roleId }
         });
+        
+        CacheManager.delete(CacheManager.keys.levelRoleMultipliers(req.params.guildId));
+        
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting multiplier:', error);

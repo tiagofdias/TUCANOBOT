@@ -4,12 +4,15 @@ const path = require('path');
 const Level = require(path.join(__dirname, '..', '..', 'models', 'Level'));
 const LevelConfig = require(path.join(__dirname, '..', '..', 'models', 'LevelConfig'));
 const LevelRoleMultiplier = require(path.join(__dirname, '..', '..', 'models', 'LevelRoleMultiplier'));
+const CacheManager = require(path.join(__dirname, '..', '..', 'utils', 'CacheManager'));
 const cooldowns = new Set();
 
 module.exports = {
 	name: Events.MessageCreate,
 	once: false,
 	async execute(message) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping Level.js - database offline');
+
 
 		//LEVEL
 		if (!message.inGuild() || message.author.bot || cooldowns.has(message.author.id)) return;
@@ -17,7 +20,10 @@ module.exports = {
 		try {
 
 			let xpToGive = null;
-			let levelConfig = await LevelConfig.findOne({ where: { ServerID: message.guild.id } });
+			let levelConfig = await CacheManager.getOrFetch(
+				CacheManager.keys.levelConfig(message.guild.id),
+				() => LevelConfig.findOne({ where: { ServerID: message.guild.id } })
+			);
 
 			if (levelConfig) xpToGive = levelConfig.TextXP; else xpToGive = 10
 
@@ -27,7 +33,10 @@ module.exports = {
 
 				////////////////////////////////////////////
 				// Find all roles with boost numbers for the specified server
-				const roles = await LevelRoleMultiplier.findAll({ where: { ServerID: message.guild.id } });
+				const roles = await CacheManager.getOrFetch(
+					CacheManager.keys.levelRoleMultipliers(message.guild.id),
+					() => LevelRoleMultiplier.findAll({ where: { ServerID: message.guild.id } })
+				);
 
 				if (roles) {
 

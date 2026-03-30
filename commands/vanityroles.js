@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 const VanityRoles = require('../models/VanityRoles');
+const CacheManager = require('../utils/CacheManager');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -72,7 +73,10 @@ module.exports = {
 										RoleID: role,
 										CustomStatus: customstatus
 									})
-										.then(() => interaction.reply({ content: "Your vanity was successfully created", ephemeral: true }))
+										.then(() => {
+											CacheManager.delete(CacheManager.keys.vanityRoles(interaction.guildId.toString()));
+											interaction.reply({ content: "Your vanity was successfully created", ephemeral: true });
+										})
 										.catch(error => {
 											if (error.name === 'SequelizeUniqueConstraintError') {
 												interaction.reply('That tag already exists.');
@@ -95,6 +99,7 @@ module.exports = {
 
 						if (count === 1) {
 							await VanityRoles.destroy({ where: { IDVanity: id } });
+							CacheManager.delete(CacheManager.keys.vanityRoles(interaction.guildId.toString()));
 							interaction.reply({ content: `The vanity role has been successfully deleted from the list`, ephemeral: true });
 						} else
 							interaction.reply({ content: `The ID is not in the list. Please check /vanityroles list to get the correct Index`, ephemeral: true });

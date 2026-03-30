@@ -11,6 +11,8 @@ module.exports = {
 
         //LEVEL
         setInterval(async () => {
+            if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping interval in level.js');
+
 
             client.guilds.cache.forEach(async (guild) => {
 

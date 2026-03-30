@@ -9,6 +9,8 @@ module.exports = {
 	name: Events.MessageCreate,
 	once: false,
 	async execute(message) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping ActiveMembers.js - database offline');
+
 
         if (!message.inGuild() || message.author.bot || cooldowns.has(message.author.id)) return;
 

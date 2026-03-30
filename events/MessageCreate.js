@@ -59,6 +59,8 @@ async function takeWebsiteScreenshot(message, url) {
 module.exports = {
 	name: Events.MessageCreate,
 	async execute(message) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping MessageCreate.js - database offline');
+
 		// Leveling logic removed from this file; handled in events/MessageCreate/Level.js
 		if (!message.inGuild()) return;
 

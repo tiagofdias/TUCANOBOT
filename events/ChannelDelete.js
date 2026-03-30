@@ -7,6 +7,8 @@ const TempVCS = require('../models/TempVCS');
 module.exports = {
     name: Events.ChannelDelete,
     async execute(channel) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping ChannelDelete.js - database offline');
+
 
         try {
 

@@ -7,6 +7,8 @@ module.exports = {
 	name: Events.MessageCreate,
 	once: false,
 	async execute(message) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping AutoDelete.js - database offline');
+
 
 		//Autodelete
 		try {

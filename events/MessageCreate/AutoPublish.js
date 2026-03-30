@@ -7,6 +7,8 @@ module.exports = {
     name: Events.MessageCreate,
     once: false,
     async execute(message) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping AutoPublish.js - database offline');
+
 
         //AUTOPUBLISH
         if (!message.embeds.length && message.channel.type === ChannelType.GuildAnnouncement) {

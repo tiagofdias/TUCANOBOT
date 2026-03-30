@@ -5,6 +5,8 @@ const PersistentRoles = require('../models/PersistantRoles');
 module.exports = {
     name: Events.GuildMemberRemove,
     async execute(member) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping GuildMemberRemove.js - database offline');
+
 
         try {
 

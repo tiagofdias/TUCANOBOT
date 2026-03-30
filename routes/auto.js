@@ -6,6 +6,7 @@ const AutoDelete = require('../models/AutoDelete');
 const AutoPublish = require('../models/AutoPublish');
 const AutoRole = require('../models/AutoRole');
 const AutoScreenshot = require('../models/AutoScreenshot');
+const CacheManager = require('../utils/CacheManager');
 
 // ============ AUTO DELETE ============
 
@@ -145,6 +146,8 @@ router.put('/:guildId/autorole', requireAuth, requireGuildPermission, async (req
             botRoleId: botRoleId !== undefined ? botRoleId : config.botRoleId,
             userRoleId: userRoleId !== undefined ? userRoleId : config.userRoleId
         });
+
+        CacheManager.delete(CacheManager.keys.autoRole(req.params.guildId));
 
         res.json(config);
     } catch (error) {

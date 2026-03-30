@@ -57,6 +57,9 @@ module.exports = {
 
                 console.log(`Ready! Logged in as ${client.user.tag}`);
             })
-            .catch(err => console.log(err));
+            .catch(err => {
+                global.DATABASE_OFFLINE = true;
+                console.log('[DB] Database connection failed - Safe Mode activated:', err.message || err);
+            });
     },
 };

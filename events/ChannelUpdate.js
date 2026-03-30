@@ -4,6 +4,8 @@ const RoleStatus = require('../models/RoleStatus');
 module.exports = {
     name: Events.ChannelUpdate,
     async execute(oldChannel, newChannel) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping ChannelUpdate.js - database offline');
+
 
         if (oldChannel?.type === 2 && newChannel?.type === 2) {
            

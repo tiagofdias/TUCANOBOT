@@ -4,11 +4,14 @@ const RoleStatus = require('../models/RoleStatus');
 const VoiceLogs = require('../models/VoiceLogs');
 const ActiveRoles = require('../models/ActiveRoles');
 const ActiveRolesConfig = require('../models/ActiveRolesConfig');
+const CacheManager = require('../utils/CacheManager');
 let voiceManager = new Collection();
 
 module.exports = {
   name: Events.VoiceStateUpdate,
   async execute(oldState, newState) {
+        if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping VoiceStateUpdate.js - database offline');
+
 
     const { member, guild } = oldState;
     const newChannel = newState.channel;
@@ -63,7 +66,10 @@ module.exports = {
 
             //DAR BONUS
 
-            const QueryActiveRolesConfig = await ActiveRolesConfig.findOne({ where: { ServerID: guild.id } });
+            const QueryActiveRolesConfig = await CacheManager.getOrFetch(
+              CacheManager.keys.activeRolesConfig(guild.id),
+              () => ActiveRolesConfig.findOne({ where: { ServerID: guild.id } })
+            );
 
             if (QueryActiveRolesConfig && QueryActiveRolesConfig.Enabled === true) {
 
@@ -103,11 +109,17 @@ module.exports = {
         }
 
         //in a Stage Channel
-        const QueryRoleStatus2 = await RoleStatus.findOne({ where: { ServerID: guild.id, Roletype: 6 }, })
+        const QueryRoleStatus2 = await CacheManager.getOrFetch(
+          CacheManager.keys.roleStatus(guild.id, 6),
+          () => RoleStatus.findOne({ where: { ServerID: guild.id, Roletype: 6 } })
+        );
         if (QueryRoleStatus2) newState.member.roles.remove(QueryRoleStatus2.RoleID);
 
         //in a VC role
-        const QueryRoleStatus = await RoleStatus.findOne({ where: { ServerID: newChannel.guild.id, Roletype: 7 }, })
+        const QueryRoleStatus = await CacheManager.getOrFetch(
+          CacheManager.keys.roleStatus(newChannel.guild.id, 7),
+          () => RoleStatus.findOne({ where: { ServerID: newChannel.guild.id, Roletype: 7 } })
+        );
 
         if (QueryRoleStatus) {
 
@@ -122,11 +134,17 @@ module.exports = {
       } else if (newChannel.type === 13) { //STAGE CHANNEL
 
         //in a VC role
-        const QueryRoleStatus2 = await RoleStatus.findOne({ where: { ServerID: guild.id, Roletype: 7 }, })
+        const QueryRoleStatus2 = await CacheManager.getOrFetch(
+          CacheManager.keys.roleStatus(guild.id, 7),
+          () => RoleStatus.findOne({ where: { ServerID: guild.id, Roletype: 7 } })
+        );
         if (QueryRoleStatus2) newState.member.roles.remove(QueryRoleStatus2.RoleID);
 
         //in a Stage Channel role
-        const QueryRoleStatus = await RoleStatus.findOne({ where: { ServerID: newChannel.guild.id, Roletype: 6 }, })
+        const QueryRoleStatus = await CacheManager.getOrFetch(
+          CacheManager.keys.roleStatus(newChannel.guild.id, 6),
+          () => RoleStatus.findOne({ where: { ServerID: newChannel.guild.id, Roletype: 6 } })
+        );
 
         if (QueryRoleStatus) {
 
@@ -166,11 +184,17 @@ module.exports = {
         }
 
         //in a VC role
-        const QueryRoleStatus = await RoleStatus.findOne({ where: { ServerID: guild.id, Roletype: 7 }, })
+        const QueryRoleStatus = await CacheManager.getOrFetch(
+          CacheManager.keys.roleStatus(guild.id, 7),
+          () => RoleStatus.findOne({ where: { ServerID: guild.id, Roletype: 7 } })
+        );
         if (QueryRoleStatus) newState.member.roles.remove(QueryRoleStatus.RoleID);
 
         //in a Stage Channel
-        const QueryRoleStatus2 = await RoleStatus.findOne({ where: { ServerID: guild.id, Roletype: 6 }, })
+        const QueryRoleStatus2 = await CacheManager.getOrFetch(
+          CacheManager.keys.roleStatus(guild.id, 6),
+          () => RoleStatus.findOne({ where: { ServerID: guild.id, Roletype: 6 } })
+        );
         if (QueryRoleStatus2) newState.member.roles.remove(QueryRoleStatus2.RoleID);
 
       }
@@ -183,7 +207,10 @@ module.exports = {
       const canViewChannel = permissions.has(PermissionFlagsBits.ViewChannel);
 
       //Screen Share
-      const QueryRoleStatus = await RoleStatus.findOne({ where: { ServerID: newChannel.guild.id, Roletype: 3 }, })
+      const QueryRoleStatus = await CacheManager.getOrFetch(
+        CacheManager.keys.roleStatus(newChannel.guild.id, 3),
+        () => RoleStatus.findOne({ where: { ServerID: newChannel.guild.id, Roletype: 3 } })
+      );
 
       if (QueryRoleStatus) {
 
@@ -193,7 +220,10 @@ module.exports = {
       }
 
       //Recording
-      const QueryRoleStatus2 = await RoleStatus.findOne({ where: { ServerID: newChannel.guild.id, Roletype: 5 }, })
+      const QueryRoleStatus2 = await CacheManager.getOrFetch(
+        CacheManager.keys.roleStatus(newChannel.guild.id, 5),
+        () => RoleStatus.findOne({ where: { ServerID: newChannel.guild.id, Roletype: 5 } })
+      );
 
       if (QueryRoleStatus2) {
 

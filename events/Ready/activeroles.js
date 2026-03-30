@@ -1,6 +1,7 @@
 const path = require('path');
 const ActiveRoles = require(path.join(__dirname, '..', '..', 'models', 'ActiveRoles'));
 const ActiveRolesConfig = require(path.join(__dirname, '..', '..', 'models', 'ActiveRolesConfig'));
+const CacheManager = require(path.join(__dirname, '..', '..', 'utils', 'CacheManager'));
 const cron = require('node-cron');
 
 const { Events } = require('discord.js');
@@ -15,7 +16,10 @@ module.exports = {
 
             client.guilds.cache.each(async (guild) => {
 
-                const QueryActiveRolesConfig = await ActiveRolesConfig.findOne({ where: { ServerID: guild.id } });
+                const QueryActiveRolesConfig = await CacheManager.getOrFetch(
+                    CacheManager.keys.activeRolesConfig(guild.id),
+                    () => ActiveRolesConfig.findOne({ where: { ServerID: guild.id } })
+                );
 
                 if (QueryActiveRolesConfig && QueryActiveRolesConfig.Enabled === true) {
 

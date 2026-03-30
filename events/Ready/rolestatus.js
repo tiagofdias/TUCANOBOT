@@ -1,5 +1,6 @@
 const path = require('path');
 const RoleStatus = require(path.join(__dirname, '..', '..', 'models', 'RoleStatus'));
+const CacheManager = require(path.join(__dirname, '..', '..', 'utils', 'CacheManager'));
 
 const { Events } = require('discord.js');
 
@@ -9,6 +10,8 @@ module.exports = {
     async execute(client) {
 
         setInterval(async () => {
+            if (global.DATABASE_OFFLINE) return console.debug('[Safe Mode] Skipping interval in rolestatus.js');
+
 
             client.guilds.cache.forEach(async (guild) => {
 
@@ -24,9 +27,12 @@ module.exports = {
 
                     await Promise.all(
                         queries.map(async (query) => {
-                            const queryResult = await RoleStatus.findOne({
-                                where: { ServerID: guild.id, ...query }
-                            });
+                            const queryResult = await CacheManager.getOrFetch(
+                                CacheManager.keys.roleStatus(guild.id, query.Roletype),
+                                () => RoleStatus.findOne({
+                                    where: { ServerID: guild.id, ...query }
+                                })
+                            );
 
                             if (queryResult) {
                                 const role = guild.roles.cache.get(queryResult.RoleID);

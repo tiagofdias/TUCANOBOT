@@ -3,6 +3,15 @@ const { Events } = require('discord.js');
 module.exports = {
 	name: Events.InteractionCreate,
 	async execute(interaction) {
+		if (global.DATABASE_OFFLINE) {
+			const errorMessage = { content: '⚠️ The database is currently unavailable. The bot is running in Safe Mode and some features are temporarily disabled. Please try again later.', flags: 64 };
+			try {
+				if (interaction.replied || interaction.deferred) await interaction.followUp(errorMessage);
+				else await interaction.reply(errorMessage);
+			} catch(e) {}
+			return;
+		}
+
 		if (!interaction.isChatInputCommand()) return;
 
 		const command = interaction.client.commands.get(interaction.commandName);
